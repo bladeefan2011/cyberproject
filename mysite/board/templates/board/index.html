@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Message Board</title>
+</head>
+<body>
+    <h1>Message Board</h1>
+    
+    {% if user.is_authenticated %}
+        <p>Welcome, {{ user.username }}! <a href="{% url 'logout' %}">Logout</a></p>
+    {% else %}
+        <p><a href="{% url 'login' %}">Login</a> | <a href="{% url 'register' %}">Register</a></p>
+    {% endif %}
+
+    <h2>Search Messages</h2>
+    <form method="get">
+        <input type="text" name="search" placeholder="Search messages...">
+        <button type="submit">Search</button>
+    </form>
+
+    {% if user.is_authenticated %}
+    <h2>Post a Message</h2>
+    <form method="post" action="{% url 'post_message' %}">
+        {% csrf_token %}
+        <textarea name="content" rows="4" required></textarea><br>
+        <button type="submit">Post Message</button>
+    </form>
+    {% endif %}
+
+    <h2>Messages</h2>
+    {% for message in messages %}
+    <hr>
+    <p><strong>{{ message.author.username }}</strong></p>
+    <p>{{ message.content }}</p>
+    <p><small>{{ message.created_at|date:"Y-m-d H:i" }}</small></p>
+    {% empty %}
+    <p>No messages yet.</p>
+    {% endfor %}
+</body>
+</html>
