@@ -19,13 +19,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
+# Problem A02, the secret key is hardcoded
 SECRET_KEY = 'django-insecure-%@un$h&5j)^u)p2f25njdfp7018@&bi!tv%#u+767&3ml+4hvl'
+# FIX, use environment variable, for example:
+# SECRET_KEY = os.environ.get('SECRET_KEY', 'CHANGEME')
 
-# SECURITY WARNING: don't run with debug turned on in production!
+
+# Problem A02, debug is set to True
 DEBUG = True
+# FIX, change to false with:
+# DEBUG = False
 
 ALLOWED_HOSTS = []
+# Allowed hosts are not specified, which is a security risk. Change to (for example):
+# ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'customurl.custom']
 
 
 # Application definition
@@ -37,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'board',
 ]
 
 MIDDLEWARE = [
@@ -83,20 +91,26 @@ DATABASES = {
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
+# Problem A07: No password validation
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    # They are disabled, so passwords can be weak
 ]
+
+# FIX: Have password validators enabled, like these:
+# AUTH_PASSWORD_VALIDATORS = [
+#     {
+#         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+#     },
+#     {
+#         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+#     },
+#     {
+#         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+#     },
+#     {
+#         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+#     },
+# ]
 
 
 # Internationalization
