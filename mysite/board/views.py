@@ -15,7 +15,7 @@ def index(request):
     search_query = request.GET.get('search', '')
     
     if search_query:
-        query = f"SELECT * FROM board_message WHERE content LIKE '%{search_query}%' ORDER BY created_at DESC"
+        query = f"SELECT board_message.id, board_message.content, board_message.created_at, board_message.author_id, auth_user.username as author__username FROM board_message JOIN auth_user ON board_message.author_id = auth_user.id WHERE content LIKE '%{search_query}%' ORDER BY created_at DESC"
         with connection.cursor() as cursor:
             cursor.execute(query)
             columns = [col[0] for col in cursor.description]
@@ -25,7 +25,7 @@ def index(request):
     
     # FIX, use parameterized queries in odrer to prevent SQL injection
     # if search_query:
-    #     query = "SELECT * FROM board_message WHERE content LIKE %s ORDER BY created_at DESC"
+    #     query = "SELECT board_message.id, board_message.content, board_message.created_at, board_message.author_id, auth_user.username as author__username FROM board_message JOIN auth_user ON board_message.author_id = auth_user.id WHERE content LIKE %s ORDER BY created_at DESC"
     #     with connection.cursor() as cursor:
     #         cursor.execute(query, [f'%{search_query}%'])
     #         columns = [col[0] for col in cursor.description]
@@ -61,7 +61,7 @@ def login_view(request):
     #     
     #     if attempts >= 5:
     #         logger.warning(f'Rate limit exceeded for IP: {ip}')
-    #         return HttpResponse('Too many login attempts. Try again later.', status=429)
+    #         return HttpResponse('Too many login attempts.', status=429)
     #     
     #     user = authenticate(request, username=username, password=password)
     #     if user is not None:
@@ -70,7 +70,7 @@ def login_view(request):
     #         cache.delete(cache_key)
     #         return redirect('index')
     #     else:
-    #         logger.warning(f'Failed login attempt for user: {username} from IP: {ip}')
+    #         logger.warning(f'Failed login attempt for user: {username} from: {ip}')
     #         cache.set(cache_key, attempts + 1, 300)  # 5 minute timeout
     
     return render(request, 'board/login.html')
@@ -100,7 +100,7 @@ def post_message(request):
 
 def delete_message(request, message_id):
     message = Message.objects.get(id=message_id)
-    # Problem A09, message deletions are not logged
+    # Problem A09 and A01, message deletions are not logged, everyone can delete any message
     message.delete()
     return redirect('index')
     

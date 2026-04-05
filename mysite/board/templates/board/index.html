@@ -30,7 +30,11 @@
     <h2>Messages</h2>
     {% for message in messages %}
     <hr>
-    <p><strong>{{ message.author.username }}</strong></p>
+    {% if message.author__username %}
+        <p><strong>{{ message.author__username }}</strong></p>
+    {% else %}
+        <p><strong>{{ message.author.username }}</strong></p>
+    {% endif %}
     <p>{{ message.content }}</p>
     <p><small>{{ message.created_at|date:"Y-m-d H:i" }}</small></p>
     {% if user.is_authenticated %}
