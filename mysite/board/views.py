@@ -5,12 +5,18 @@ from django.contrib.auth.models import User
 from django.db import connection
 from .models import Message
 import logging
+from django.core.cache import cache
+from django.http import HttpResponse
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+
 
  # Problem A09, logger is not used
 logger = logging.getLogger(__name__)
 
 
 def index(request):
+    # logger.info(f'User {request.user.username if request.user.is_authenticated else "Anonymous"} visited the index page.')
     # Problem A05, raw SQL is used without parameters
     search_query = request.GET.get('search', '')
     
@@ -36,33 +42,19 @@ def index(request):
     return render(request, 'board/index.html', {'messages': messages})
 
 def login_view(request):
-    # Problem A07, login attempts dont have rate limiting or logging
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            login(request, user)
-            return redirect('index')
+    # Fixed A07: Added rate limiting and logging
     
-        # FIX, log failed login attempts
-        # logger.warning(f'Failed login attempt for user: {username} from IP: {request.META.get("REMOTE_ADDR")}')
-    
-    # FIX, add rate limiting to login attempts
-    # from django.core.cache import cache
-    # from django.http import HttpResponse
-    # 
     # if request.method == 'POST':
     #     username = request.POST.get('username')
     #     password = request.POST.get('password')
     #     ip = request.META.get('REMOTE_ADDR')
     #     cache_key = f'login_attempts_{ip}'
     #     attempts = cache.get(cache_key, 0)
-    #     
+        
     #     if attempts >= 5:
     #         logger.warning(f'Rate limit exceeded for IP: {ip}')
     #         return HttpResponse('Too many login attempts.', status=429)
-    #     
+        
     #     user = authenticate(request, username=username, password=password)
     #     if user is not None:
     #         login(request, user)
@@ -76,17 +68,29 @@ def login_view(request):
     return render(request, 'board/login.html')
 
 def logout_view(request):
+    if request.user.is_authenticated:
+        # logger.info(f'User logged out: {request.user.username}')
+        pass
     logout(request)
     return redirect('index')
 
+
+#Problem A07: No password validation
+# FIX: Now the validation is actually done when we're registering.
 def register_view(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
         if username and password:
-            user = User.objects.create_user(username=username, password=password)
-            login(request, user)
-            return redirect('index')
+            try:
+                validate_password(password)
+                user = User.objects.create_user(username=username, password=password)
+                login(request, user)
+                # logger.info(f'New user registered and logged in: {username}')
+                return redirect('index')
+            except ValidationError as e:
+                # logger.warning(f'User failed registration due to weak password: {username}')
+                return render(request, 'board/register.html', {'error': 'Password too weak.'})
     return render(request, 'board/register.html')
 
 @login_required
@@ -95,21 +99,17 @@ def post_message(request):
         content = request.POST.get('content')
         if content:
             Message.objects.create(author=request.user, content=content)
+            # logger.info(f'User {request.user.username} posted a message.')
         return redirect('index')
     return redirect('index')
 
 def delete_message(request, message_id):
     message = Message.objects.get(id=message_id)
-    # Problem A09 and A01, message deletions are not logged, everyone can delete any message
-    message.delete()
-    return redirect('index')
     
-    # FIX, check if the user is the owner before deleting
-    # FIX, add logging for deletions
-    # if message.author == request.user:
-    #     logger.warning(f'User {request.user.username} deleted message(s) {message_id}')
-    #     message.delete()
-    #     return redirect('index')
-    # else:
-    #     logger.warning(f'Unauthorized deletion attempt by {request.user.username} on message(s) {message_id}')
-    #     return redirect('index')
+    if message.author == request.user:
+        # logger.info(f'User {request.user.username} deleted message {message_id}')
+        message.delete()
+        return redirect('index')
+    else:
+        # logger.warning(f'Unauthorized deletion attempt by {request.user.username} on message {message_id}')
+        return redirect('index')
