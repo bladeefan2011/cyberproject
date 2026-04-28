@@ -39,7 +39,7 @@ def index(request):
     # else:
     #     messages = Message.objects.all()
     
-    return render(request, 'board/index.html', {'messages': messages})
+    return render(request, 'board/index.html', {'messages': messages}) 
 
 def login_view(request):
     # Fixed A07: Added rate limiting and logging
